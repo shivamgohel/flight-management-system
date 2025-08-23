@@ -42,9 +42,9 @@ class CityService {
       throw error;
     }
   }
-  async searchCity(cityName) {
+  async searchCity(name) {
     try {
-      const city = await this.cityRepository.findCityByName(cityName);
+      const city = await this.cityRepository.findCityByName(name);
       return city;
     } catch (error) {
       logger.error(`City Searching failed at Service Layer: ${error.message}`);
