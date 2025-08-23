@@ -1,5 +1,5 @@
 const { CityRepository } = require("../repository/index");
-const logger = require("../config/index");
+const { logger } = require("../config/index");
 
 class CityService {
   constructor() {
