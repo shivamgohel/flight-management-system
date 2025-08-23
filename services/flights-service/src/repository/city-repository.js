@@ -2,10 +2,10 @@ const { City } = require("../models/index");
 const { logger } = require("../config/index");
 
 class CityRepository {
-  async createCity({ cityName }) {
+  async createCity({ name }) {
     try {
       const city = await City.create({
-        name: cityName,
+        name,
       });
       return city;
     } catch (error) {
