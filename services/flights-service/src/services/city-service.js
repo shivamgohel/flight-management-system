@@ -42,6 +42,16 @@ class CityService {
       throw error;
     }
   }
+
+  async getAllCities() {
+    try {
+      const cities = await this.cityRepository.getAllCities();
+      return cities;
+    } catch (error) {
+      logger.error(`Cities Fetching failed at Service Layer: ${error.message}`);
+      throw error;
+    }
+  }
   async searchCity(name) {
     try {
       const city = await this.cityRepository.findCityByName(name);

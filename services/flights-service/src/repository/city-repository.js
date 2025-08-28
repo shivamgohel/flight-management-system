@@ -60,6 +60,18 @@ class CityRepository {
     }
   }
 
+  async getAllCities() {
+    try {
+      const cities = await City.findAll();
+      return cities;
+    } catch (error) {
+      logger.error(
+        `Cities Fetching failed at Repository Layer: ${error.message}`
+      );
+      throw error;
+    }
+  }
+
   async findCityByName(name) {
     try {
       const city = await City.findOne({

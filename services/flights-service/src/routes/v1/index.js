@@ -19,6 +19,7 @@ router.use((req, res, next) => {
 });
 
 router.get("/city/:id", CityController.get);
+router.get("/city", CityController.getAll);
 router.get("/cities", CityController.search);
 router.post("/city", CityController.create);
 router.patch("/city/:id", CityController.update);
