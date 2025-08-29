@@ -66,6 +66,26 @@ const get = async (req, res) => {
   }
 };
 
+const getAll = async (req, res) => {
+  try {
+    const cities = await cityService.getAllCities(req.query);
+    return res.status(StatusCodes.OK).json({
+      data: cities,
+      success: true,
+      message: "Successfully Fetched the Cities ",
+      error: {},
+    });
+  } catch (error) {
+    logger.error(`Cities Feteching Failed At Controller Layer`);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      data: {},
+      success: false,
+      message: "Not Able to Fetch the Cities",
+      error: error.message,
+    });
+  }
+};
+
 const update = async (req, res) => {
   try {
     const response = await cityService.updateCity(req.params.id, req.body);
@@ -120,6 +140,7 @@ module.exports = {
   create,
   destroy,
   get,
+  getAll,
   update,
   search,
 };
