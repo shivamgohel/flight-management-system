@@ -8,7 +8,11 @@ const create = async (req, res) => {
     const airplane = await airplaneService.createAirplane(req.body);
     return res.status(StatusCodes.CREATED).json({
       data: airplane,
+<<<<<<< HEAD
       sucess: true,
+=======
+      success: true,
+>>>>>>> service/flights
       message: "Succesfully Created a airplane",
       error: {},
     });
@@ -28,7 +32,7 @@ const get = async (req, res) => {
     const airplane = await airplaneService.getAirplane(req.params.id);
     return res.status(StatusCodes.OK).json({
       data: airplane,
-      sucess: true,
+      success: true,
       message: "Successfully fetched the Airpane",
       error: {},
     });
@@ -48,7 +52,7 @@ const getAll = async (req, res) => {
     const airplanes = await airplaneService.getAllAirplanes();
     return res.status(StatusCodes.OK).json({
       data: airplanes,
-      sucess: true,
+      success: true,
       message: "Successfully fetched the Airplanes",
       error: {},
     });
@@ -56,7 +60,7 @@ const getAll = async (req, res) => {
     logger.error("Not able to fetch all the Airplanes at Controller Layer");
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       data: {},
-      sucess: false,
+      success: false,
       message: "Not able to Fetch all the Airplanes at Controller Layer",
       error: error.message,
     });
