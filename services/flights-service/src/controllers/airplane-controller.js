@@ -8,11 +8,7 @@ const create = async (req, res) => {
     const airplane = await airplaneService.createAirplane(req.body);
     return res.status(StatusCodes.CREATED).json({
       data: airplane,
-<<<<<<< HEAD
-      sucess: true,
-=======
       success: true,
->>>>>>> service/flights
       message: "Succesfully Created a airplane",
       error: {},
     });
