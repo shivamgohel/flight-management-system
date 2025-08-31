@@ -3,6 +3,7 @@ const { logger } = require("../../config/index");
 
 const cityRoutes = require("./city-routes");
 const airplaneRoutes = require("./airplane-routes");
+const airportRoutes = require("./airport-routes");
 
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.use((req, res, next) => {
 
 router.use("/city", cityRoutes);
 router.use("/airplane", airplaneRoutes);
+router.use("/airport", airportRoutes);
 
 module.exports = router;
