@@ -2,6 +2,7 @@ const express = require("express");
 const { logger } = require("../../config/index");
 
 const cityRoutes = require("./city-routes");
+const airplaneRoutes = require("./airplane-routes");
 
 const router = express.Router();
 
@@ -19,5 +20,6 @@ router.use((req, res, next) => {
 });
 
 router.use("/city", cityRoutes);
+router.use("/airplane", airplaneRoutes);
 
 module.exports = router;
