@@ -20,8 +20,8 @@ router.use((req, res, next) => {
   next();
 });
 
-router.use("/city", cityRoutes);
-router.use("/airplane", airplaneRoutes);
-router.use("/airport", airportRoutes);
+router.use("/cities", cityRoutes);
+router.use("/airplanes", airplaneRoutes);
+router.use("/airports", airportRoutes);
 
 module.exports = router;
