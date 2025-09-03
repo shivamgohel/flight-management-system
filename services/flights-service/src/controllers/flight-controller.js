@@ -33,6 +33,27 @@ const create = async (req, res) => {
   }
 };
 
+const getAll = async (req, res) => {
+  try {
+    const flights = await FlightService.getAllFlights(req.query);
+    return res.status(StatusCodes.OK).json({
+      data: flights,
+      success: true,
+      message: "Successfully fetched the flights",
+      error: {},
+    });
+  } catch (error) {
+    logger.error("Not able to fetch Flights at Controller Layer");
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      data: {},
+      success: false,
+      message: "Not able to fetch Flights",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   create,
+  getAll,
 };
