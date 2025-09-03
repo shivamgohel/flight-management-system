@@ -1,4 +1,4 @@
-const { Op } = require("sequelize");
+const { Op, or } = require("sequelize");
 
 const { FlightRepository } = require("../repository");
 const { logger } = require("../config");
@@ -22,6 +22,7 @@ async function createFlight(data) {
 
 async function getAllFlights(query) {
   let customFilter = {};
+  let sortFilter = [];
 
   // trips -> MUM-DEL
   if (query.trips) {
@@ -74,8 +75,23 @@ async function getAllFlights(query) {
     };
   }
 
+  // sorting filters
+  if (query.sort) {
+    sortFilter = query.sort
+      .split(",")
+      .map((param) => param.trim())
+      .map((param) => {
+        const [field, order] = param.split("_");
+
+        return [field, order];
+      });
+  }
+
   try {
-    const flights = await flightRepository.getAllFlights(customFilter);
+    const flights = await flightRepository.getAllFlights(
+      customFilter,
+      sortFilter
+    );
     return flights;
   } catch (error) {
     logger.error("Fetching of all Flights went wrong at Service Layer");
