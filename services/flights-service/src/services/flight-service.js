@@ -1,4 +1,4 @@
-const { Op, or } = require("sequelize");
+const { Op } = require("sequelize");
 
 const { FlightRepository } = require("../repository");
 const { logger } = require("../config");
