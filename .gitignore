@@ -1,5 +1,6 @@
 node_modules/
 .env
 combined.log
-services/flights-service/src/config/config.json
+**/config.json
+
 
