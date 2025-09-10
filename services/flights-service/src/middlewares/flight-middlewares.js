@@ -69,6 +69,19 @@ function validateCreateRequest(req, res, next) {
   next();
 }
 
+function validateUpdateSeatsRequest(req, res, next) {
+  if (!req.body.seats) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      data: {},
+      success: false,
+      message: "seats was not found in the incoming request",
+      error: { details: "Missing required field: seats" },
+    });
+  }
+  next();
+}
+
 module.exports = {
   validateCreateRequest,
+  validateUpdateSeatsRequest,
 };

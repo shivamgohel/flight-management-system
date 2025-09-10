@@ -74,8 +74,33 @@ const get = async (req, res) => {
   }
 };
 
+const updateSeats = async (req, res) => {
+  try {
+    const response = await FlightService.updateSeats({
+      flightId: req.params.id,
+      seats: req.body.seats,
+      dec: req.body.dec,
+    });
+    return res.status(StatusCodes.OK).json({
+      data: response,
+      success: true,
+      message: "Successfully updated the seats",
+      error: {},
+    });
+  } catch (error) {
+    logger.error("Not able to update seats at Controller Layer");
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      data: {},
+      success: false,
+      message: "Not able to update seats",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   create,
   getAll,
   get,
+  updateSeats,
 };
