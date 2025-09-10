@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 
 const { FlightService } = require("../services");
 const { logger } = require("../config");
+const { error } = require("winston");
 
 const create = async (req, res) => {
   try {
@@ -53,7 +54,28 @@ const getAll = async (req, res) => {
   }
 };
 
+const get = async (req, res) => {
+  try {
+    const flight = await FlightService.getFlight(req.params.id);
+    return res.status(StatusCodes.OK).json({
+      data: flight,
+      success: true,
+      message: "Successfully fetched the flight",
+      error: {},
+    });
+  } catch (error) {
+    logger.error("Not able to fetch flight at Controller Layer");
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      data: {},
+      success: false,
+      message: "Not able to fetch flight",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   create,
   getAll,
+  get,
 };

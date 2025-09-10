@@ -12,5 +12,6 @@ router.post(
 );
 
 router.get("/", FlightController.getAll);
+router.get("/:id", FlightController.get);
 
 module.exports = router;
