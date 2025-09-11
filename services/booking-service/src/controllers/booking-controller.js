@@ -69,8 +69,35 @@ async function getAllBookings(req, res) {
   }
 }
 
+async function updateBooking(req, res) {
+  try {
+    const bookingId = req.params.id;
+    const status = req.body;
+
+    const updatedBooking = await BookingService.updateBooking(
+      bookingId,
+      status
+    );
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Booking updated successfully",
+      data: updatedBooking,
+      error: {},
+    });
+  } catch (error) {
+    logger.error("Failed to update the Booking");
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to update Booking",
+      data: {},
+      error: error,
+    });
+  }
+}
+
 module.exports = {
   createBooking,
   getBooking,
   getAllBookings,
+  updateBooking,
 };
