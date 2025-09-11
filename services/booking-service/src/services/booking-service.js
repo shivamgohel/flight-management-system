@@ -90,9 +90,34 @@ async function updateBooking(id, data) {
   }
 }
 
+async function cancelBooking(id) {
+  try {
+    const booking = bookingRepository.get(id);
+    if (!booking) {
+      throw new AppError("Booking not found", StatusCodes.NOT_FOUND);
+    }
+
+    if (booking.status === "CANCELLED") {
+      throw new AppError(
+        "Booking is already Cancelled",
+        StatusCodes.BAD_REQUEST
+      );
+    }
+
+    await bookingRepository.update(id, { status: "CANCELLED" });
+
+    const updatedBooking = await bookingRepository.get(id);
+    return updatedBooking;
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   createBooking,
   getBooking,
   getAllBookings,
   updateBooking,
+  cancelBooking,
 };

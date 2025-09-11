@@ -22,4 +22,6 @@ router.get("/", BookingController.getAllBookings);
 
 router.patch("/:id", validateStatusUpdate, BookingController.updateBooking);
 
+router.patch("/:id/cancel", BookingController.cancelBooking);
+
 module.exports = router;

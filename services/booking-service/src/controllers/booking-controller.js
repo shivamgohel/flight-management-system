@@ -95,9 +95,32 @@ async function updateBooking(req, res) {
   }
 }
 
+async function cancelBooking(req, res) {
+  try {
+    const id = req.params.id;
+    const response = await BookingService.cancelBooking(id);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Booking cancelled successfully",
+      data: response,
+      error: {},
+    });
+  } catch (error) {
+    logger.error("Failed to cancel booking in controller layer", error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to cancel booking",
+      data: {},
+      error: error,
+    });
+  }
+}
+
 module.exports = {
   createBooking,
   getBooking,
   getAllBookings,
   updateBooking,
+  cancelBooking,
 };
