@@ -23,7 +23,6 @@ async function createBooking(data) {
           userId: data.userId,
           noOfSeats: data.noOfSeats,
           totalCost: data.noOfSeats * flightData.price,
-          status: "BOOKED",
         };
         const booking = await bookingRepository.create(bookingData, {
           transaction: t,
