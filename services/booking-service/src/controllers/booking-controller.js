@@ -27,6 +27,29 @@ async function createBooking(req, res) {
   }
 }
 
+async function getBooking(req, res) {
+  try {
+    const bookingId = req.params.id;
+    const booking = await BookingService.getBooking(bookingId);
+
+    return res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Booking fetched successfully",
+      data: booking,
+      error: {},
+    });
+  } catch (error) {
+    logger.error("not able to fetch the Booking", error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: "Failed to fetch the Booking",
+      data: {},
+      error: error,
+    });
+  }
+}
+
 module.exports = {
   createBooking,
+  getBooking,
 };

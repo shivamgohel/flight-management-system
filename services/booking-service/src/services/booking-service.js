@@ -38,6 +38,17 @@ async function createBooking(data) {
   }
 }
 
+async function getBooking(id) {
+  try {
+    const booking = await bookingRepository.get(id);
+    return booking;
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   createBooking,
+  getBooking,
 };
