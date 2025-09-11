@@ -1,7 +1,8 @@
 const express = require("express");
 
-const { Logger } = require("../../config/index");
+const { logger } = require("../../config/index");
 const { infoController } = require("../../controllers/index");
+const bookingRoutes = require("./booking-routes");
 
 const router = express.Router();
 
@@ -19,5 +20,7 @@ router.use((req, res, next) => {
 });
 
 router.get("/info", infoController.info);
+
+router.use("/bookings", bookingRoutes);
 
 module.exports = router;
