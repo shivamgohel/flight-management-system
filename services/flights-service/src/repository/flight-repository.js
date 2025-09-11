@@ -2,6 +2,7 @@ const { Sequelize } = require("sequelize");
 
 const { Flight, Airplane, Airport, City } = require("../models");
 const CrudRepository = require("./crud-repository");
+const db = require("../models");
 
 class FlightRepository extends CrudRepository {
   constructor() {
@@ -61,6 +62,14 @@ class FlightRepository extends CrudRepository {
   }
 
   async updateRemainingSeats(flightId, seats, dec = true) {
+    // Lock the specific flight row for update within the current transaction
+    await db.sequelize.query(
+      `SELECT * From Flights WHERE Flights.id = :flightId FOR UPDATE`,
+      {
+        replacements: { flightId },
+      }
+    );
+
     // Parse seats as an integer to ensure correct numeric type
     seats = parseInt(seats);
 
