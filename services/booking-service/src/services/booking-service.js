@@ -48,7 +48,18 @@ async function getBooking(id) {
   }
 }
 
+async function getAllBookings() {
+  try {
+    const bookings = await bookingRepository.getAll();
+    return bookings;
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   createBooking,
   getBooking,
+  getAllBookings,
 };
