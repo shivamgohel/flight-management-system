@@ -52,14 +52,14 @@ The system is composed of the following **microservices**:
 - **Flights Service** ✈️  
   Manages all flight-related data and operations.
 
+- **Booking Service** 🧾  
+  Handles flight booking and reservation.
+
 - **Auth Service** 🔐  
   Handles user authentication and authorization.
 
 - **Reminder Service** ⏰  
   Manages flight reminder notifications.
-
-- **Booking Service** 🧾  
-  Handles flight booking and reservation.
 
 - **API Gateway** 🌐  
   Acts as the single entry point for all client requests, routing them to the appropriate services.
@@ -137,6 +137,9 @@ providing a robust set of **RESTful APIs** for handling:
 
 - `POST /api/v1/flights`  
   → Create a new flight ✅ (`FlightMiddlewares.validateCreateRequest`)
+
+- `GET /api/v1/flights/:id`
+  → Fetch detailed information for a specific flight by its ID
 
 - `GET /api/v1/flights`  
   → Fetch all flights with filtering, sorting, and eager loading
@@ -227,3 +230,363 @@ providing a robust set of **RESTful APIs** for handling:
   }
 ]
 ```
+
+---
+
+- `PATCH /api/v1/flights/:id/seats`
+  → Update the remaining seats on a flight (increment or decrement)
+  → Ensures concurrency-safe operations using row-level locking.
+
+  **Path Parameters**
+
+  - `:id` → ID of the flight to update
+
+  **Request Body**
+
+  - `seats` → Required. Number of seats to adjust (positive integer)
+  - `dec` → Optional. Boolean (true to decrease, false to increase seats). Defaults to true.
+
+  **Validation & Logic**
+
+  - `seats` must be a positive integer
+
+  - Throws error if dec=true and not enough seats are available
+
+  - Accepts both boolean and string values for dec (e.g., "true", "false")
+
+  - Uses Sequelize transactions with row-level locking for safe updates
+
+### Example Request
+
+`PATCH /api/v1/flights/15/seats`
+
+```json
+{
+  "seats": 2,
+  "dec": true
+}
+```
+
+### Example Response
+
+```json
+{
+  "data": {
+    "id": 15,
+    "flightNumber": "AI-202",
+    "totalSeats": 178,
+    "price": 2500,
+    "departureTime": "2025-09-06T10:00:00Z",
+    "arrivalTime": "2025-09-06T12:30:00Z",
+    "boardingGate": "A12",
+    "airplaneId": 1,
+    "departureAirportId": "DEL",
+    "arrivalAirportId": "BOM",
+    "createdAt": "2025-09-01T08:00:00Z",
+    "updatedAt": "2025-09-13T10:30:00Z"
+  },
+  "success": true,
+  "message": "Successfully updated the seats",
+  "error": {}
+}
+```
+
+### Row-Level Locking for Seat Updates
+
+To prevent race conditions and ensure data consistency during seat updates, the Flights Service now implements **row-level locking** on the flight record.
+
+When updating the remaining seats of a flight, the service locks the specific flight row in the database using a `SELECT ... FOR UPDATE` query inside a transaction. This ensures that concurrent requests to update seats are serialized, preventing conflicts and inconsistent seat counts.
+
+```js
+await db.sequelize.query(
+  `SELECT * FROM Flights WHERE Flights.id = :flightId FOR UPDATE`,
+  {
+    replacements: { flightId },
+  }
+);
+```
+
+---
+
+# 🧾 Booking Microservice
+
+---
+
+The **Booking Microservice** handles all flight booking operations including creation, retrieval, update, and cancellation of bookings.
+
+### 🔄 Inter-Service Communication
+
+The Booking Microservice communicates with the Flights Microservice using **HTTP requests via Axios**.
+
+- Example: Fetching flight details inside a database transaction before creating a booking.
+
+```js
+async function createBooking(data) {
+  try {
+    const result = await db.sequelize.transaction(
+      async function bookingImplementation(t) {
+        // Fetch flight details from Flights Service
+        const flight = await axios.get(
+          `${serverConfig.FLIGHTS_SERVICE}/api/v1/flights/${data.flightId}`
+        );
+
+        const flightData = flight.data.data;
+
+        // Prepare booking data with total cost calculated
+        const bookingData = {
+          flightId: data.flightId,
+          userId: data.userId,
+          noOfSeats: data.noOfSeats,
+          totalCost: data.noOfSeats * flightData.price,
+        };
+
+        // Create booking within the transaction
+        const booking = await bookingRepository.create(bookingData, {
+          transaction: t,
+        });
+
+        return booking;
+      }
+    );
+    return result;
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+```
+
+- Axios calls are awaited to ensure synchronous flow inside transactions.
+
+- Network failures or validation errors will cause the transaction to rollback.
+
+- This pattern ensures data consistency between services.
+
+---
+
+## 📌 API Endpoints
+
+### ✍️ Create Booking
+
+`POST /api/v1/bookings`
+
+Create a new booking.
+
+**Request Body**
+
+| Field       | Type    | Description             | Required |
+| ----------- | ------- | ----------------------- | -------- |
+| `flightId`  | Integer | Flight identifier       | Yes      |
+| `userId`    | Integer | User identifier         | Yes      |
+| `noOfSeats` | Integer | Number of seats to book | Yes      |
+
+**Validation**
+
+- `flightId` and `userId` must be valid integers.
+- `noOfSeats` must be a positive integer.
+- Seat availability is verified with the Flights Service.
+
+**Success Response**
+
+```json
+{
+  "success": true,
+  "message": "Booking created successfully",
+  "data": {
+    "id": 101,
+    "flightId": 15,
+    "userId": 23,
+    "noOfSeats": 2,
+    "totalCost": 5000,
+    "status": "BOOKED",
+    "createdAt": "2025-09-13T10:00:00Z",
+    "updatedAt": "2025-09-13T10:00:00Z"
+  },
+  "error": {}
+}
+```
+
+---
+
+### 🔍 Get Booking by ID
+
+`GET /api/v1/bookings/:id`
+
+Fetch booking details by ID.
+
+**Parameters**
+
+| Name | Type    | Description | Required |
+| ---- | ------- | ----------- | -------- |
+| `id` | Integer | Booking ID  | Yes      |
+
+**Success Response**
+
+```json
+{
+  "success": true,
+  "message": "Booking fetched successfully",
+  "data": {
+    "id": 101,
+    "flightId": 15,
+    "userId": 23,
+    "noOfSeats": 2,
+    "totalCost": 5000,
+    "status": "BOOKED",
+    "createdAt": "2025-09-13T10:00:00Z",
+    "updatedAt": "2025-09-13T10:00:00Z"
+  },
+  "error": {}
+}
+```
+
+---
+
+### 📋 Get All Bookings
+
+`GET /api/v1/bookings`
+
+Fetch a list of all bookings.
+
+**Success Response**
+
+```json
+{
+  "success": true,
+  "message": "Bookings fetched successfully",
+  "data": [
+    {
+      "id": 101,
+      "flightId": 15,
+      "userId": 23,
+      "noOfSeats": 2,
+      "totalCost": 5000,
+      "status": "BOOKED",
+      "createdAt": "2025-09-13T10:00:00Z",
+      "updatedAt": "2025-09-13T10:00:00Z"
+    },
+    {
+      "id": 102,
+      "flightId": 16,
+      "userId": 45,
+      "noOfSeats": 1,
+      "totalCost": 2500,
+      "status": "CANCELLED",
+      "createdAt": "2025-09-10T08:30:00Z",
+      "updatedAt": "2025-09-12T09:15:00Z"
+    }
+  ],
+  "error": {}
+}
+```
+
+---
+
+### ✏️ Update Booking Status
+
+`PATCH /api/v1/bookings/:id`
+
+Update the status of an existing booking.
+
+**Path Parameters**
+
+| Parameter | Type   | Description        | Required |
+| --------- | ------ | ------------------ | -------- |
+| `id`      | String | Booking identifier | Yes      |
+
+**Request Body**
+
+| Field    | Type   | Description                                                    | Required |
+| -------- | ------ | -------------------------------------------------------------- | -------- |
+| `status` | String | New status value (e.g., BOOKED, CANCELLED, INITIATED, PENDING) | Yes      |
+
+**Validation**
+
+- `status` is required.
+- Allowed values: `BOOKED`, `CANCELLED`, `INITIATED`, `PENDING`.
+
+**Success Response**
+
+```json
+{
+  "success": true,
+  "message": "Booking updated successfully",
+  "data": {
+    "id": 101,
+    "flightId": 15,
+    "userId": 23,
+    "noOfSeats": 2,
+    "totalCost": 5000,
+    "status": "CANCELLED",
+    "createdAt": "2025-09-13T10:00:00Z",
+    "updatedAt": "2025-09-14T12:00:00Z"
+  },
+  "error": {}
+}
+```
+
+---
+
+### ❌ Cancel Booking
+
+`PATCH /api/v1/bookings/:id/cancel`
+
+Cancel an existing booking by setting its status to **CANCELLED**.
+
+**Path Parameters**
+
+| Parameter | Type   | Description        | Required |
+| --------- | ------ | ------------------ | -------- |
+| `id`      | String | Booking identifier | Yes      |
+
+**Success Response**
+
+```json
+{
+  "success": true,
+  "message": "Booking cancelled successfully",
+  "data": {
+    "id": 101,
+    "flightId": 15,
+    "userId": 23,
+    "noOfSeats": 2,
+    "totalCost": 5000,
+    "status": "CANCELLED",
+    "createdAt": "2025-09-13T10:00:00Z",
+    "updatedAt": "2025-09-14T12:30:00Z"
+  },
+  "error": {}
+}
+```
+
+---
+
+## ⚙️ Request Validation Middlewares
+
+### Create Booking Validator
+
+- Validates presence and type of `flightId`, `userId`, and `noOfSeats`.
+- Returns **400 Bad Request** if validation fails.
+
+### Seat Availability Validator
+
+- Calls Flights Service to ensure requested seats are available.
+- Returns **400 Bad Request** if there are insufficient seats.
+
+### Status Update Validator
+
+- Ensures `status` field exists in the request body.
+- Validates that `status` is one of the allowed values:
+  `BOOKED`, `CANCELLED`, `INITIATED`, `PENDING`.
+
+---
+
+## 🔧 Internal Logic Notes
+
+- Booking creation runs inside a **database transaction** to ensure atomicity.
+- **Total cost** is computed by multiplying `noOfSeats` by the flight price fetched from the Flights Service.
+- Status updates and cancellations only modify the booking **status** field.
+- Errors are **logged** for monitoring and debugging purposes.
+- Communicates with the **Flights Service** to fetch flight data and verify seat availability.
+
+---
