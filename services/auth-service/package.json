@@ -1,7 +1,7 @@
 {
   "name": "auth-service",
   "version": "1.0.0",
-  "description": "",
+  "description": "Service for managing user authentication and authorization",
   "main": "index.js",
   "scripts": {
     "start": "npx nodemon src/index.js"
@@ -12,6 +12,7 @@
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "express-validator": "^7.2.1",
     "http-status-codes": "^2.3.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.14.5",
