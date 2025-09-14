@@ -2,6 +2,7 @@ const express = require("express");
 
 const { logger } = require("../../config/index");
 const { infoController } = require("../../controllers/index");
+const authRoutes = require("./auth-routes");
 
 const router = express.Router();
 
@@ -19,5 +20,7 @@ router.use((req, res, next) => {
 });
 
 router.get("/info", infoController.info);
+
+router.use("/auth", authRoutes);
 
 module.exports = router;
