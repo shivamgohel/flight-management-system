@@ -1,7 +1,7 @@
 {
   "name": "auth-service",
   "version": "1.0.0",
-  "description": "",
+  "description": "Service for managing user authentication and authorization",
   "main": "index.js",
   "scripts": {
     "start": "npx nodemon src/index.js"
