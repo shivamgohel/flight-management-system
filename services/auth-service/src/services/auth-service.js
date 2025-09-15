@@ -1,6 +1,14 @@
+<<<<<<< HEAD
 const { AuthRepository } = require("../repository/index");
 const { StatusCodes } = require("http-status-codes");
 const { AppError } = require("../utils/index");
+=======
+const { StatusCodes } = require("http-status-codes");
+
+const { AuthRepository } = require("../repository/index");
+const { AppError } = require("../utils/index");
+const { logger } = require("../config/index");
+>>>>>>> services/auth
 
 const authRepository = new AuthRepository();
 
