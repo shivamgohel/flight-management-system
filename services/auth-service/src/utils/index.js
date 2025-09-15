@@ -5,4 +5,6 @@ module.exports = {
   SuccessResponse: require("./common/success-response"),
 
   passwordHelpers: require("./helpers/password"),
+
+  tokenHelpers: require("./helpers/token"),
 };

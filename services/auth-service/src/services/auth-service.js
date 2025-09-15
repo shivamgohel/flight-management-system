@@ -3,6 +3,7 @@ const { StatusCodes } = require("http-status-codes");
 const { AuthRepository } = require("../repository/index");
 const { AppError } = require("../utils/index");
 const { logger } = require("../config/index");
+const { passwordHelpers, tokenHelpers } = require("../utils/index");
 
 const authRepository = new AuthRepository();
 
@@ -29,6 +30,58 @@ async function createUser(data) {
   }
 }
 
+async function signIn(data) {
+  try {
+    // 1. find user by email
+    const user = await authRepository.findOne({
+      where: { email: data.email },
+    });
+    if (!user) {
+      throw new AppError(
+        `No user found for ${data.email}`,
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    // 2. verify the password
+    const isPasswordValid = await passwordHelpers.comparePassword(
+      data.password,
+      user.password
+    );
+    if (!isPasswordValid) {
+      throw new AppError("Invalid Password", StatusCodes.UNAUTHORIZED);
+    }
+
+    // 3. create JWT token payload and the token
+    const payload = {
+      id: user.id,
+      email: user.email,
+    };
+    const token = tokenHelpers.createToken(payload);
+
+    // 4. remove the password from user object before returning
+    const { password, ...userWithoutPassword } = user.toJSON();
+
+    // 5. return the user info without password and the jwt token
+    return {
+      user: userWithoutPassword,
+      token,
+    };
+  } catch (error) {
+    logger.error("Error during signIn:", error);
+
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      "An unexpected error occured during signIn",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 module.exports = {
   createUser,
+  signIn,
 };

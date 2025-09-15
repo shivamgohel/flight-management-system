@@ -1,7 +1,7 @@
 const express = require("express");
 
 const { AuthController } = require("../../controllers/index");
-const { validateSignup } = require("../../middlewares/index");
+const { validateSignup, validateSignin } = require("../../middlewares/index");
 
 const router = express.Router();
 
@@ -11,5 +11,12 @@ const router = express.Router();
  * @access  Public
  */
 router.post("/signup", validateSignup, AuthController.signup);
+
+/**
+ * @route   POST /api/v1/auth/signin
+ * @desc    Authenticate user and return JWT token
+ * @access  Public
+ */
+router.post("/signin", validateSignin, AuthController.signin);
 
 module.exports = router;
