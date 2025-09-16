@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 
 const { tokenHelpers } = require("../utils/index");
 const { ErrorResponse } = require("../utils/index");
+const { logger } = require("../config/index");
 
 /**
  * Middleware to check if the request has a valid JWT token.
@@ -24,6 +25,8 @@ function isAuthenticated(req, res, next) {
     req.user = decoded;
     next();
   } catch (error) {
+    logger.error("Authentication middleware error!");
+
     let message = "Invalid token!";
 
     if (error.name === "TokenExpiredError") {

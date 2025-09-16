@@ -92,7 +92,65 @@ async function signin(req, res) {
   }
 }
 
+/**
+ * POST /auth/users/:id/roles
+ *
+ * Expected request params:
+ *   id - User ID (in URL path)
+ *
+ * Expected request body (JSON):
+ * {
+ *   "role": "customer"    // string, required, role name to assign to user
+ * }
+ *
+ */
+async function addRoleToUser(req, res) {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    const result = await AuthService.addRoleToUser(id, { role });
+
+    // If the service says role is already assigned, return 409 Conflict or 400 Bad Request
+    if (result.success === false) {
+      return res.status(StatusCodes.CONFLICT).json(
+        ErrorResponse({
+          message: result.message,
+        })
+      );
+    }
+
+    // Otherwise, role assigned successfully
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        message: `Role ${role} added to user with id:${id} successfully`,
+        data: result,
+      })
+    );
+  } catch (error) {
+    logger.error("Add role to user failed at controller layer", {
+      error: error.message,
+    });
+
+    if (error instanceof AppError) {
+      return res.status(StatusCodes.BAD_REQUEST).json(
+        ErrorResponse({
+          message: error.message,
+        })
+      );
+    }
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(
+      ErrorResponse({
+        message: "Something went wrong with adding role to user",
+        error: error.message,
+      })
+    );
+  }
+}
+
 module.exports = {
   signup,
   signin,
+  addRoleToUser,
 };

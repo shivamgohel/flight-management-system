@@ -1,7 +1,14 @@
 const express = require("express");
 
 const { AuthController } = require("../../controllers/index");
-const { validateSignup, validateSignin } = require("../../middlewares/index");
+const {
+  validateSignup,
+  validateSignin,
+  isAuthenticated,
+  isAuthorized,
+} = require("../../middlewares/index");
+const { Enums } = require("../../utils/index");
+const { ADMIN } = Enums.USER_ROLES_ENUMS;
 
 const router = express.Router();
 
@@ -18,5 +25,17 @@ router.post("/signup", validateSignup, AuthController.signup);
  * @access  Public
  */
 router.post("/signin", validateSignin, AuthController.signin);
+
+/**
+ * @route   POST /api/v1/auth/users/:id/roles
+ * @desc    Assign a role to a user by user ID
+ * @access  Protected
+ */
+router.post(
+  "/users/:id/roles",
+  isAuthenticated,
+  isAuthorized([ADMIN]),
+  AuthController.addRoleToUser
+);
 
 module.exports = router;
