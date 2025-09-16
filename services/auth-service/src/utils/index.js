@@ -3,6 +3,7 @@ module.exports = {
 
   ErrorResponse: require("./common/error-response"),
   SuccessResponse: require("./common/success-response"),
+  Enums: require("./common/enums"),
 
   passwordHelpers: require("./helpers/password"),
 
