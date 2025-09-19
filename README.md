@@ -590,3 +590,97 @@ Cancel an existing booking by setting its status to **CANCELLED**.
 - Communicates with the **Flights Service** to fetch flight data and verify seat availability.
 
 ---
+
+# 🔐 Auth Service
+
+The **Auth Service** handles user authentication and authorization for the Flight Management System.  
+It provides secure user signup, signin, and role management functionalities without relying on external libraries like Passport.js, using JWTs for tokens and bcrypt for password hashing.
+
+---
+
+## 🚀 Features
+
+- **User Signup**  
+  Register new users with securely hashed passwords using bcrypt.
+
+- **User Signin**  
+  Authenticate users and issue JSON Web Tokens (JWT) for session management.
+
+- **Role Management**  
+  Assign roles to users for role-based access control (RBAC).
+
+- **Middleware Authentication & Authorization**  
+  Custom `isAuthenticated` middleware to verify JWTs.  
+  Custom `isAuthorized` middleware to enforce user role permissions.
+
+- **Request Validation**  
+  Middlewares to validate signup and signin request bodies to ensure data integrity.
+
+- **Sequelize ORM**  
+  Models and migrations to manage Users, Roles, and UserRoles.
+
+- **Logging**  
+  Centralized logging configuration for error tracking and debugging.
+
+---
+
+## 📄 API Endpoints
+
+### Authentication
+
+| Method | Endpoint              | Description                | Access |
+| ------ | --------------------- | -------------------------- | ------ |
+| POST   | `/api/v1/auth/signup` | Register a new user        | Public |
+| POST   | `/api/v1/auth/signin` | Authenticate and get token | Public |
+
+### User Role Management
+
+| Method | Endpoint                       | Description                    | Access            |
+| ------ | ------------------------------ | ------------------------------ | ----------------- |
+| POST   | `/api/v1/auth/users/:id/roles` | Assign role(s) to a user by ID | Protected (Admin) |
+
+---
+
+## 🔐 Middleware
+
+- **isAuthenticated**: Verifies JWT tokens and authenticates users.
+- **isAuthorized**: Checks if the authenticated user has required role(s).
+- **validateSignup**: Validates user registration data.
+- **validateSignin**: Validates user login data.
+
+---
+
+## 💾 Database Models
+
+- **User**  
+  Stores user credentials and profile info.
+
+- **Role**  
+  Defines roles like `ADMIN`, `FLIGHT_COMPANY` & `USER`.
+
+- **UserRole**  
+  Maps users to their roles (many-to-many relationship).
+
+---
+
+## 🔧 How It Works
+
+- **Signup:**  
+  User submits registration details → password is hashed → user record created → optionally assign roles.
+
+- **Signin:**  
+  User submits credentials → password verified → JWT token generated → token returned for authorization in future requests.
+
+- **Role Assignment:**  
+  Admin users can assign roles to other users → used by authorization middleware to permit access.
+
+- **Request Authorization:**  
+  Middleware validates JWT → extracts user roles → permits or denies access based on roles.
+
+## 🔒 Security
+
+- **Password Hashing:** Uses bcrypt with salt rounds for strong hashing.
+- **JWT Handling:** Tokens include expiration and secure signing.
+- **Input Validation:** Protects against injection and malformed data.
+
+---
