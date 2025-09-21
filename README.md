@@ -406,6 +406,21 @@ Create a new booking.
 }
 ```
 
+### RabbitMQ Publishing
+
+After successfully creating a booking, the Booking Service publishes a message to RabbitMQ to notify the Notification Service for email delivery. The published message contains:
+
+- `type`: `BOOKING_CREATED`
+- `bookingId` → ID of the newly created booking
+- `userId` → User ID
+- `userEmail` → User email fetched from Auth Service
+- `flightId` → Flight ID
+- `seats` → Number of seats booked
+- `totalCost` → Total booking cost
+- `timestamp` → Booking creation timestamp
+
+The Notification Service consumes this message asynchronously, creates a pending ticket in the database with `status: PENDING`, and sends the confirmation email via the scheduled email cron job.
+
 ---
 
 ### 🔍 Get Booking by ID
@@ -684,3 +699,213 @@ It provides secure user signup, signin, and role management functionalities with
 - **Input Validation:** Protects against injection and malformed data.
 
 ---
+
+# 📧 Notification Service
+
+The **Notification Service** is responsible for managing and delivering email notifications to users within the Flight Management System. It ensures reliable email delivery using **RabbitMQ** for queuing, a retry mechanism, and a scheduled cron job for processing pending or failed emails.
+
+---
+
+## 🚀 Features
+
+- **Email Sending**
+  Send transactional emails such as booking confirmations, cancellations, and reminders.
+
+- **RabbitMQ Integration**
+  Booking Service publishes email tickets to **RabbitMQ**, which the Notification Service consumes.
+
+- **Robust Error Handling**
+  Handles authentication failures, network issues, and unexpected errors with descriptive logs and retry logic.
+
+- **Retry Mechanism**
+  Emails with status `PENDING` or `FAILED` are retried automatically until successfully delivered.
+
+- **Cron-Based Scheduler**
+  A cron job runs every **5 minutes** to process queued emails and update their delivery status.
+
+- **Centralized Logging**
+  Logs all email attempts, successes, and failures for monitoring and debugging.
+
+---
+
+## ⚡ Why Use a Queue
+
+In the Flight Management System, booking events can occur at **very high traffic volumes**, especially during peak booking hours. On the other hand, the Notification Service typically handles **less frequent email sending operations**.
+
+Using a **message queue (RabbitMQ)** provides several advantages:
+
+1. **Asynchronous Processing**: Booking Service can publish messages without waiting for the Notification Service to send emails, preventing delays in booking flow.
+2. **Traffic Buffering**: High booking traffic will not overwhelm the Notification Service. Messages are queued and processed at a manageable pace.
+3. **Reliability**: Even if the Notification Service is temporarily down, messages remain in the queue and will be processed later.
+4. **Decoupling Services**: Booking Service and Notification Service are independent, making the system more maintainable and scalable.
+5. **Retry Mechanism**: Failed email messages can remain in the queue or DB ticket for retries without blocking new bookings.
+
+**Why not use HTTP directly?**
+
+- Synchronous HTTP calls would require the Booking Service to wait for the Notification Service to process emails.
+- High traffic could cause delays or failures in booking creation.
+- Queue-based async processing ensures smooth operation even under heavy load.
+
+---
+
+## ⚙️ Notification Service Full Workflow
+
+### 1. Booking Event Published
+
+- **Trigger:** User creates a booking via Booking Service.
+- **Action:** Booking Service publishes an email notification payload to **RabbitMQ**.
+- **Payload Structure:**
+
+```json
+{
+  "type": "BOOKING_CREATED",
+  "bookingId": 101,
+  "userId": 23,
+  "userEmail": "user@example.com",
+  "flightId": 15,
+  "seats": 2,
+  "totalCost": 5000,
+  "timestamp": "2025-09-13T10:00:00Z"
+}
+```
+
+### 2. Notification Service Consumes Message
+
+- **Queue:** RabbitMQ Queue subscribed by Notification Service.
+- **Action:** Consumes the message and creates a **ticket** in the database.
+- **Ticket Data Stored:**
+
+```js
+const ticketData = {
+  subject: `Booking Confirmation #${bookingId}`,
+  content: `Your booking for flight ${flightId} with ${seats} seat(s) totaling $${totalCost} was successfully created on ${timestamp}.`,
+  recepientEmail: userEmail,
+  status: PENDING,
+};
+```
+
+### 3. Cron Job for Email Processing
+
+- **Schedule:** Every 5 minutes (`*/5 * * * *`).
+- **Function:** `sendPendingEmails()`.
+- **Action:** Picks up tickets with `PENDING` or `FAILED` status for processing.
+
+### 4. Email Sending Logic
+
+- Attempts to send emails using **Nodemailer with Gmail SMTP**.
+- Handles error scenarios:
+
+  - **EAUTH** → Authentication failure, mark as `FAILED`
+  - **ECONNECTION / ETIMEDOUT / ESOCKET** → Network issues, mark as `FAILED`
+  - **Unexpected errors** → Log and mark as `FAILED`
+
+- On successful delivery, ticket status updated to `SUCCESS`.
+
+### 5. Retry Mechanism
+
+- Emails with status `FAILED` or still `PENDING` are retried automatically in the next cron cycle.
+- Ensures that no email is left unsent.
+
+### 6. Logging & Monitoring
+
+- All actions, successes, and failures are logged centrally.
+- Example logs:
+
+```bash
+INFO: Found 3 pending emails to send.
+INFO: Email sent to user1@example.com: 250 OK
+INFO: Email sent and status updated for ticket ID 12
+ERROR: Failed to send email for ticket ID 13 Authentication failed
+INFO: Retrying email on next cron cycle
+```
+
+### 7. End-to-End Flow
+
+```
+Booking Service ---> RabbitMQ Exchange ---> Notification Service ---> Ticket Created in DB (PENDING) ---> Cron Job (sendPendingEmails) ---> Email Sent via Nodemailer/Gmail ---> Recipient
+```
+
+---
+
+## 📧 Email Configuration
+
+The Notification Service uses **Nodemailer** with Gmail as the SMTP service.
+
+```js
+const nodemailer = require("nodemailer");
+
+const { GMAIL_EMAIL, GMAIL_PASSWORD } = require("./server-config");
+
+const mailSender = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: GMAIL_EMAIL,
+    pass: GMAIL_PASSWORD,
+  },
+});
+
+module.exports = { mailSender };
+```
+
+This is imported as `emailConfig.mailSender` in the service for sending emails.
+
+---
+
+## 📄 Core Functions
+
+### `sendEmail`
+
+Responsible for sending emails using the configured mail transporter.
+
+- Handles different error scenarios:
+
+  - **EAUTH** → Authentication failure
+  - **ECONNECTION / ETIMEDOUT / ESOCKET** → Network issues
+  - Any other error is treated as **Unexpected**
+
+```js
+async function sendEmail(mailFrom, mailTo, subject, text, html = null)
+```
+
+---
+
+### `getPendingTickets`
+
+Fetches all email tickets with status **PENDING** or **FAILED** for retry processing.
+
+```js
+async function getPendingTickets()
+```
+
+---
+
+### `sendPendingEmails`
+
+Processes pending tickets:
+
+1. Fetch tickets with status **PENDING** or **FAILED**.
+2. Attempt to send each email using `sendEmail`.
+3. Update ticket status:
+
+   - ✅ `SUCCESS` → Email sent successfully.
+   - ❌ `FAILED` → Email failed, will retry later.
+
+```js
+async function sendPendingEmails()
+```
+
+---
+
+### `startEmailCron`
+
+Starts a **cron job** that runs every **5 minutes** to process pending and failed emails automatically.
+
+```js
+async function startEmailCron()
+```
+
+---
+
+## ✅ Summary
+
+The **Notification Service** ensures reliable, consistent, and fault-tolerant email delivery within the Flight Management System. With **RabbitMQ integration**, retry mechanisms, structured error handling, and a scheduled cron job, it guarantees that no email is left unsent.
