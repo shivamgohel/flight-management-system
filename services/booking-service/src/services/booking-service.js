@@ -2,7 +2,7 @@ const axios = require("axios");
 
 const db = require("../models");
 const { BookingRepository } = require("../repository");
-const { serverConfig, logger } = require("../config/index");
+const { serverConfig, logger, queueConfig } = require("../config/index");
 const AppError = require("../utils/errors/app-error");
 const { StatusCodes } = require("http-status-codes");
 
@@ -24,9 +24,37 @@ async function createBooking(data) {
           noOfSeats: data.noOfSeats,
           totalCost: data.noOfSeats * flightData.price,
         };
+        // Create booking record in DB within transaction
         const booking = await bookingRepository.create(bookingData, {
           transaction: t,
         });
+
+        // Fetch user email from Auth service
+        let userEmail = null;
+        try {
+          const userResponse = await axios.get(
+            `${serverConfig.AUTH_SERVICE}/api/v1/auth/users/${booking.userId}`
+          );
+          userEmail = userResponse.data.data.email;
+        } catch (error) {
+          logger.error(
+            `Failed to fetch user email for userId ${booking.userId}:`,
+            error.message
+          );
+        }
+        // Prepare notification message payload
+        const notificationPayload = {
+          type: "BOOKING_CREATED",
+          bookingId: booking.id,
+          userId: booking.userId,
+          userEmail,
+          flightId: booking.flightId,
+          seats: booking.noOfSeats,
+          totalCost: booking.totalCost,
+          timestamp: new Date().toISOString(),
+        };
+        // Publish message to notification queue
+        await queueConfig.sendData(notificationPayload);
 
         return booking;
       }
@@ -92,7 +120,7 @@ async function updateBooking(id, data) {
 
 async function cancelBooking(id) {
   try {
-    const booking = bookingRepository.get(id);
+    const booking = await bookingRepository.get(id);
     if (!booking) {
       throw new AppError("Booking not found", StatusCodes.NOT_FOUND);
     }
