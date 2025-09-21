@@ -3,6 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const { TicketRepository } = require("../repository/index");
 const { emailConfig, logger } = require("../config/index");
 const { AppError } = require("../utils/index");
+const { Cron, Enums } = require("../utils/index");
+const { FAILED, SUCCESS } = Enums.STATUS_ENUMS;
 
 const ticketRepository = new TicketRepository();
 
@@ -52,7 +54,7 @@ async function sendEmail(mailFrom, mailTo, subject, text, html = null) {
       mailOptions.html = html;
     }
 
-    const response = await emailConfig.sendMail(mailOptions);
+    const response = await emailConfig.mailSender.sendMail(mailOptions);
     logger.info(`Email sent to ${mailTo}: ${response.response}`);
 
     return response;
@@ -82,7 +84,7 @@ async function sendEmail(mailFrom, mailTo, subject, text, html = null) {
 }
 
 /**
- * Fetches tickets with "PENDING" status.
+ * Fetches tickets with "PENDING" & "FAILED" status.
  *
  * @param {Object} options - Filter options
  * @returns {Promise<Array>} List of pending tickets
@@ -100,8 +102,46 @@ async function getPendingTickets() {
   }
 }
 
+async function sendPendingEmails() {
+  try {
+    const pendingTickets = await ticketRepository.getPendingTickets();
+    logger.info(`Found ${pendingTickets.length} pending emails to send.`);
+
+    for (const ticket of pendingTickets) {
+      try {
+        await sendEmail(
+          "quicknotificationservice@gmail.com",
+          ticket.recepientEmail,
+          ticket.subject,
+          ticket.content
+        );
+
+        // Update status to SUCCESS after successful send.
+        await ticketRepository.updateStatus(ticket.id, SUCCESS);
+        logger.info(`Email sent and status updated for ticket ID ${ticket.id}`);
+      } catch (emailError) {
+        logger.error(
+          `Failed to send email for ticket ID ${ticket.id}`,
+          emailError
+        );
+        await ticketRepository.updateStatus(ticket.id, FAILED);
+      }
+    }
+  } catch (error) {
+    logger.error("Error in sendPendingEmails:", error);
+  }
+}
+
+async function startEmailCron() {
+  Cron.createCronJob("*/5 * * * *", async () => {
+    await sendPendingEmails();
+  });
+}
+
 module.exports = {
   createTicket,
   sendEmail,
   getPendingTickets,
+  sendPendingEmails,
+  startEmailCron,
 };

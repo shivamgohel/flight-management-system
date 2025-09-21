@@ -10,4 +10,4 @@ const mailSender = nodemailer.createTransport({
   },
 });
 
-module.exports = mailSender;
+module.exports = { mailSender };
