@@ -152,8 +152,24 @@ async function addRoleToUser(id, data) {
   }
 }
 
+async function getUser(id) {
+  try {
+    const user = await authRepository.get(id);
+    if (!user) {
+      throw new AppError("User not found", StatusCodes.NOT_FOUND);
+    }
+    // Remove sensitive fields before returning
+    const { password, ...userWithoutPassword } = user.toJSON();
+    return userWithoutPassword;
+  } catch (error) {
+    logger.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   createUser,
   signIn,
   addRoleToUser,
+  getUser,
 };

@@ -38,4 +38,16 @@ router.post(
   AuthController.addRoleToUser
 );
 
+/**
+ * @route GET /auth/users/:id
+ * @desc Fetch a user by ID
+ * @access Protected (authenticated users only)
+ */
+router.get(
+  "/users/:id",
+  // isAuthenticated, // require login
+  // isAuthorized([ADMIN]),
+  AuthController.getUser
+);
+
 module.exports = router;

@@ -149,8 +149,53 @@ async function addRoleToUser(req, res) {
   }
 }
 
+/**
+ * GET /auth/users/:id
+ *
+ * Fetch a user by their ID.
+ *
+ * Path Parameters:
+ *   id (string) - The unique identifier of the user to retrieve.
+ */
+async function getUser(req, res) {
+  try {
+    const { id } = req.params;
+    const user = await AuthService.getUser(id);
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json(
+        ErrorResponse({
+          message: `User with id ${id} not found`,
+        })
+      );
+    }
+
+    const userData = typeof user.toJSON === "function" ? user.toJSON() : user;
+    const { password, ...userWithoutPassword } = userData;
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        message: "User fetched successfully",
+        data: userWithoutPassword,
+      })
+    );
+  } catch (error) {
+    logger.error("Error fetching user at controller layer", {
+      error: error.message,
+    });
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(
+      ErrorResponse({
+        message: "Something went wrong while fetching the user",
+        error: error.message,
+      })
+    );
+  }
+}
+
 module.exports = {
   signup,
   signin,
   addRoleToUser,
+  getUser,
 };
