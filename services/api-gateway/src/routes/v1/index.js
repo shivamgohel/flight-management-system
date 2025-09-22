@@ -1,9 +1,30 @@
 const express = require("express");
 
 const { infoController } = require("../../controllers/index");
+const flightsRoutes = require("./flights-routes");
 
 const router = express.Router();
 
+/**
+ * GET /info
+ *
+ * Health check or status endpoint for the API.
+ * This is useful for  simply verifying that the API Gateway is running.
+ */
 router.get("/info", infoController.info);
+
+/**
+ * Mount flights-related routes.
+ *
+ * These routes handle all requests related to flights, cities, airports, and airplanes.
+ * The routes are defined separately in the flightsRoutes module for better modularity.
+ *
+ * Example:
+ * - /flights
+ * - /cities
+ * - /airports
+ * - /airplanes
+ */
+router.use(flightsRoutes);
 
 module.exports = router;
