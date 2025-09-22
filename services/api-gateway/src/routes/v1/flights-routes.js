@@ -1,6 +1,9 @@
 const express = require("express");
+const { StatusCodes } = require("http-status-codes");
 const { createProxyMiddleware } = require("http-proxy-middleware");
+
 const { serverConfig, logger } = require("../../config");
+const ErrorResponse = require("../../utils/common/error-response");
 
 const router = express.Router();
 
@@ -24,6 +27,24 @@ router.use(
     pathRewrite: {
       "^/": "/api/v1/flights",
     },
+    on: {
+      proxyReq: (proxyReq, req, res) => {
+        logger.info(`User requested: ${req.method} ${req.originalUrl}`);
+        logger.info(`Proxied to: ${FLIGHTS_SERVICE_URL}${proxyReq.path}`);
+      },
+      proxyRes: (proxyRes, req, res) => {
+        logger.info(`Response received with status: ${proxyRes.statusCode}`);
+      },
+      error: (err, req, res) => {
+        logger.error(`Proxy error: ${err.message}`);
+        res.status(StatusCodes.SERVICE_UNAVAILABLE).json(
+          ErrorResponse({
+            message: "Service currently unavailable. Please try again later",
+            error: err.message,
+          })
+        );
+      },
+    },
   })
 );
 
@@ -40,6 +61,24 @@ router.use(
     changeOrigin: true,
     pathRewrite: {
       "^/": "/api/v1/cities",
+    },
+    on: {
+      proxyReq: (proxyReq, req, res) => {
+        logger.info(`User requested: ${req.method} ${req.originalUrl}`);
+        logger.info(`Proxied to: ${FLIGHTS_SERVICE_URL}${proxyReq.path}`);
+      },
+      proxyRes: (proxyRes, req, res) => {
+        logger.info(`Response received with status: ${proxyRes.statusCode}`);
+      },
+      error: (err, req, res) => {
+        logger.error(`Proxy error: ${err.message}`);
+        res.status(StatusCodes.SERVICE_UNAVAILABLE).json(
+          ErrorResponse({
+            message: "Service currently unavailable. Please try again later",
+            error: err.message,
+          })
+        );
+      },
     },
   })
 );
@@ -58,6 +97,24 @@ router.use(
     pathRewrite: {
       "^/": "/api/v1/airports",
     },
+    on: {
+      proxyReq: (proxyReq, req, res) => {
+        logger.info(`User requested: ${req.method} ${req.originalUrl}`);
+        logger.info(`Proxied to: ${FLIGHTS_SERVICE_URL}${proxyReq.path}`);
+      },
+      proxyRes: (proxyRes, req, res) => {
+        logger.info(`Response received with status: ${proxyRes.statusCode}`);
+      },
+      error: (err, req, res) => {
+        logger.error(`Proxy error: ${err.message}`);
+        res.status(StatusCodes.SERVICE_UNAVAILABLE).json(
+          ErrorResponse({
+            message: "Service currently unavailable. Please try again later",
+            error: err.message,
+          })
+        );
+      },
+    },
   })
 );
 
@@ -74,6 +131,24 @@ router.use(
     changeOrigin: true,
     pathRewrite: {
       "^/": "/api/v1/airplanes",
+    },
+    on: {
+      proxyReq: (proxyReq, req, res) => {
+        logger.info(`User requested: ${req.method} ${req.originalUrl}`);
+        logger.info(`Proxied to: ${FLIGHTS_SERVICE_URL}${proxyReq.path}`);
+      },
+      proxyRes: (proxyRes, req, res) => {
+        logger.info(`Response received with status: ${proxyRes.statusCode}`);
+      },
+      error: (err, req, res) => {
+        logger.error(`Proxy error: ${err.message}`);
+        res.status(StatusCodes.SERVICE_UNAVAILABLE).json(
+          ErrorResponse({
+            message: "Service currently unavailable. Please try again later",
+            error: err.message,
+          })
+        );
+      },
     },
   })
 );
