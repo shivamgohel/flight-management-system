@@ -2,6 +2,7 @@ const express = require("express");
 
 const { infoController } = require("../../controllers/index");
 const flightsRoutes = require("./flights-routes");
+const authRoutes = require("./auth-routes");
 
 const router = express.Router();
 
@@ -26,5 +27,20 @@ router.get("/info", infoController.info);
  * - /airplanes
  */
 router.use(flightsRoutes);
+
+/**
+ * Mount authentication-related routes.
+ *
+ * These routes handle all requests related to user authentication and authorization,
+ * including signup, signin, role assignment, and user management.
+ * They are defined in the authRoutes module for clear separation of concerns.
+ *
+ * Example routes:
+ * - /auth/signup
+ * - /auth/signin
+ * - /auth/users/:id/roles
+ * - /auth/users/:id
+ */
+router.use(authRoutes);
 
 module.exports = router;
