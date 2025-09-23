@@ -66,6 +66,56 @@ The system is composed of the following **microservices**:
 
 ---
 
+## 🔄 System Flow
+
+```
+          ┌─────────┐
+          │ Client  │
+          └────┬────┘
+               │
+               ▼
+        ┌────────────┐
+        │ API Gateway│
+        └──────┬─────┘
+               │
+   ┌───────────┼───────────┐
+   ▼           ▼           ▼
+┌────────┐ ┌─────────┐ ┌─────────────┐
+│ Auth   │ │ Booking │ │ Flights     │
+│ Service│ │ Service │ │ Service     │
+└────────┘ └─────┬───┘ └─────────────┘
+                 │
+                 ▼
+             ┌────────┐
+             │RabbitMQ│
+             └────┬───┘
+                  │
+                  ▼
+          ┌────────────────────┐
+          │ Notification       │
+          │ Service            │
+          │────────────────────│
+          │ Cron Job:          │
+          │ sendPendingEmails()│
+          └────────┬───────────┘
+                   │
+                   ▼
+               User Email
+
+
+```
+
+**Flow Explanation:**
+
+- Clients interact with the **API Gateway**, which handles **routing, logging, and rate limiting**.
+- Requests are forwarded to **Auth**, **Booking**, or **Flights services** as needed.
+- **Booking Service** publishes booking events to **RabbitMQ**.
+- **Notification Service** consumes messages asynchronously.
+- Emails are sent via the **cron job (`sendPendingEmails()`)**.
+- Users receive email notifications, completing the flow.
+
+---
+
 ## 📂 Tech Stack
 
 - **Backend:** Node.js, Express.js
@@ -909,3 +959,67 @@ async function startEmailCron()
 ## ✅ Summary
 
 The **Notification Service** ensures reliable, consistent, and fault-tolerant email delivery within the Flight Management System. With **RabbitMQ integration**, retry mechanisms, structured error handling, and a scheduled cron job, it guarantees that no email is left unsent.
+
+# 🏗️ API Gateway
+
+The **API Gateway** acts as a single entry point for all clients interacting with the Flight Management System. It centralizes **routing, authentication, rate-limiting**, and **logging**, while forwarding requests to backend microservices.
+
+---
+
+## 🚀 Features
+
+- **Reverse Proxying**: Routes incoming requests to the appropriate microservice (Auth, Booking, Flights, Notification).
+- **Rate Limiting**: Protects services from abuse (default: 5 requests per minute per IP).
+- **Authentication & Authorization**: Middleware ensures only authorized users access protected endpoints.
+- **Centralized Logging**: Tracks requests and responses for monitoring.
+- **Decoupled Services**: Services remain independent; Gateway handles the communication layer.
+
+---
+
+## ⚡ How It Works
+
+1. **Client Request**
+   - All client requests are sent to the API Gateway at `/api`.
+2. **Routing**
+   - Gateway routes requests to the relevant service:
+     - **Auth Service** → `/auth`
+     - **Booking Service** → `/bookings`
+     - **Flights Service** → `/flights`
+     - **Notification Service** → `/notifications`
+3. **Middleware Processing**
+   - Authentication checks
+   - Rate limiting
+   - Logging request metadata
+4. **Forward to Microservice**
+   - Request is proxied to the target service.
+   - Service responds back via the Gateway to the client.
+
+---
+
+## ⚙️ Interaction with Services
+
+- **Booking & Notification Flow**
+
+  - Booking Service publishes booking events to **RabbitMQ**.
+  - Notification Service consumes these messages asynchronously and sends emails.
+  - API Gateway does **not block bookings**; it ensures smooth, asynchronous processing.
+
+- **Client Experience**
+  - Clients interact with a single endpoint (`/api`).
+  - Internal microservice communication and queues remain hidden from the client.
+
+---
+
+## ✅ Summary
+
+The **API Gateway** provides a **single entry point** to the Flight Management System, simplifying client interactions while managing **security, traffic control, and routing**. By centralizing responsibilities like **authentication, rate-limiting, and logging**, it enables backend microservices to remain **decoupled and scalable**.
+
+With the Gateway in place:
+
+- Clients have a **simplified interface** to access all services.
+- Microservices are **protected from overload** via rate limiting.
+- Asynchronous workflows, like **booking notifications**, are handled efficiently without blocking user requests.
+
+This design ensures the system remains **robust, scalable, and maintainable**, ready to handle high traffic and evolving service requirements.
+
+---
