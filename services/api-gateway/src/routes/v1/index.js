@@ -44,6 +44,23 @@ router.use(flightsRoutes);
  */
 router.use(authRoutes);
 
+/**
+ * Mount booking-related routes.
+ *
+ * These routes proxy all booking-related requests to the Booking Service.
+ * Examples of proxied endpoints include:
+ * - POST   /bookings           → Create a new booking (with validations)
+ * - GET    /bookings/:id       → Retrieve booking by ID
+ * - GET    /bookings           → Retrieve all bookings
+ * - PATCH  /bookings/:id       → Update booking status
+ * - PATCH  /bookings/:id/cancel→ Cancel a booking
+ *
+ * All booking routes are protected by authentication middleware to ensure
+ * only authorized users can perform booking operations.
+ *
+ * The API Gateway handles user authentication, forwards user identity and roles
+ * via headers to the Booking Service for downstream authorization checks.
+ */
 router.use(bookingRoutes);
 
 module.exports = router;
