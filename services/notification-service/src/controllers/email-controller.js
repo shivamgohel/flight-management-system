@@ -11,7 +11,7 @@ const { logger } = require("../config/index");
  * {
  *   subject: "Issue subject",
  *   content: "Detailed description",
- *   email: "user@example.com",
+ *   recepientEmail: "user@example.com",
  * }
  *
  * Creates a new support ticket.
