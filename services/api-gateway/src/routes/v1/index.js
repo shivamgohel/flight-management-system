@@ -3,6 +3,7 @@ const express = require("express");
 const { infoController } = require("../../controllers/index");
 const flightsRoutes = require("./flights-routes");
 const authRoutes = require("./auth-routes");
+const bookingRoutes = require("./booking-routes");
 
 const router = express.Router();
 
@@ -42,5 +43,7 @@ router.use(flightsRoutes);
  * - /auth/users/:id
  */
 router.use(authRoutes);
+
+router.use(bookingRoutes);
 
 module.exports = router;
