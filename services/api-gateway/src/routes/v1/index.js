@@ -20,14 +20,36 @@ router.get("/info", infoController.info);
  * Mount flights-related routes.
  *
  * These routes handle all requests related to flights, cities, airports, and airplanes.
- * The routes are defined separately in the flightsRoutes module for better modularity.
+ * They are defined separately in the flightsRoutes module for better modularity.
  *
- * Example:
- * - /flights
- * - /cities
- * - /airports
- * - /airplanes
+ * Examples of endpoints include:
+ * - POST   /flights           → Create a new flight record (with validations)
+ * - GET    /flights           → Retrieve all flights
+ * - GET    /flights/:id       → Retrieve flight details by ID
+ * - PATCH  /flights/:id/seats → Update seat availability for a flight
+ *
+ * - GET    /cities            → Retrieve all cities
+ * - GET    /cities/:id        → Retrieve city details by ID
+ * - POST   /cities            → Create a new city
+ * - PATCH  /cities/:id        → Update city information
+ * - DELETE /cities/:id        → Delete a city
+ *
+ * - GET    /airports          → Retrieve all airports
+ * - GET    /airports/:id      → Retrieve airport details by ID
+ * - POST   /airports          → Create a new airport
+ * - PATCH  /airports/:id      → Update airport information
+ * - DELETE /airports/:id      → Delete an airport
+ *
+ * - GET    /airplanes         → Retrieve all airplanes
+ * - GET    /airplanes/:id     → Retrieve airplane details by ID
+ * - POST   /airplanes         → Create a new airplane
+ * - PATCH  /airplanes/:id     → Update airplane information
+ * - DELETE /airplanes/:id     → Delete an airplane
+ *
+ * The API Gateway acts as a reverse proxy forwarding flight-related requests
+ * to the Flight Service, ensuring separation of concerns and scalable architecture.
  */
+
 router.use(flightsRoutes);
 
 /**
