@@ -4,6 +4,7 @@ const { infoController } = require("../../controllers/index");
 const flightsRoutes = require("./flights-routes");
 const authRoutes = require("./auth-routes");
 const bookingRoutes = require("./booking-routes");
+const notificationRoutes = require("./notification-routes");
 
 const router = express.Router();
 
@@ -62,5 +63,18 @@ router.use(authRoutes);
  * via headers to the Booking Service for downstream authorization checks.
  */
 router.use(bookingRoutes);
+
+/**
+ * Mount notification-related routes.
+ *
+ * These routes handle all requests related to notifications and email operations.
+ * Examples of endpoints include:
+ * - GET    /notifications/info     → Health check for Notification Service
+ * - POST   /notifications/tickets  → Create/send a ticket notification email
+ *
+ * The API Gateway acts as a reverse proxy forwarding notification-related requests
+ * to the Notification Service to keep the architecture modular and scalable.
+ */
+router.use("/notifications", notificationRoutes);
 
 module.exports = router;
